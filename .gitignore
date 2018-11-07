@@ -1,0 +1,6 @@
+*.aps
+*.aws
+*.h
+/default/
+lcd*
+my*
