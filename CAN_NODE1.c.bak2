@@ -7,7 +7,10 @@
 #include "myCANLib.h"
 #define FREQ_CLKIO      16000000   // clock IO 16 MHz
 #define PRESCALE      64
-#define DC_PERIOD      25         // DC ???? ??? 25 msec
+#define DC_PERIOD      10//25         // DC ???? ??? 25 msec
+
+
+#define EXPER 2
 
 unsigned int ADdata; 
 unsigned int cds=0;                         //1:Day, 0:Night
@@ -697,7 +700,7 @@ void BIOS(){        // setting when program first load.
     LCD_cmd(0x01);
 
     can_init(b500k);       // ì´ˆê¸°??
-    can_rx_set(2, 0x00, EXT, 8, 0x00000000, 0x00);    // CAN ?˜ì‹ ê¸?ì´ˆê¸°??
+    //can_rx_set(2, 0x00, EXT, 8, 0x00000000, 0x00);    // CAN ?˜ì‹ ê¸?ì´ˆê¸°??
     //        obj  id   ide  dlc  idmask   rtrldemask   
 
     sei();         // INT ?¸ì—?´ë¸”
@@ -732,14 +735,15 @@ int main(void)
     temp=25;
     temp_buffer=temp;
     while(1){
+#if EXPER == 1
         /*--------------------------------------------------*/
-       if(cds>=700)degree = 50;
-       else if(cds>=600)degree = 80;
-       else if(cds>=500)degree = 120;
-       else if(cds>=400)degree = 160;
-       else degree = 200;
+       if(cds>=800)degree = 50;
+       else if(cds>=700)degree = 80;
+       else if(cds>=600)degree = 120;
+       else if(cds>=500)degree = 160;
+       else degree = 1000;
 
-       CDS_light(degree,0);                                                                 //PE1 is for front light 
+       CDS_light(degree,0);                                                                 //PE0 is for front light 
         /*----------------------------------------------------*/
     	can_rx(2,&msg1);
 		if(msg1.data[5]==2) danger=2;
@@ -761,8 +765,35 @@ int main(void)
         else temp_buffer = (temp_buffer+temp)/2;
 
 		msg2.data[3]=temp_buffer;
+		sprintf(strBuff2,"temp: %d",temp_buffer);
+		LCD_Write(0,1,strBuff1);
 		can_tx(3,&msg2,0);
        /*--------------------------------------------------*/
-		us_delay(300);
+		ms_delay(5);
 		}
+#elif EXPER == 2
+        /*--------------------------------------------------*/
+       if(cds>=800)degree = 50;
+       else if(cds>=700)degree = 80;
+       else if(cds>=600)degree = 120;
+       else if(cds>=500)degree = 160;
+       else degree = 1000;
+
+       CDS_light(degree,0);                                                                 //PE0 is for front light 
+        /*----------------------------------------------------*/
+       /*--------------------------------------------------*/
+			buzzer();                                                                       //buzzer PE2
+			PORTE &= 0xf7;
+            ms_delay(10);
+			PORTE |= 0x08;                                                                    //alarm LED PE3	
+       /*--------------------------------------------------*/
+		if(!(temp-temp_buffer>7 || temp-temp_buffer>7)) temp_buffer=temp;                   
+        else temp_buffer = (temp_buffer+temp)/2;
+
+		sprintf(strBuff2,"temp: %d",temp_buffer);
+		LCD_Write(0,1,strBuff1);
+       /*--------------------------------------------------*/
+		ms_delay(5);
+		}
+#endif
 }
